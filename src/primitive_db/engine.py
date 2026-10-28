@@ -7,17 +7,23 @@ from primitive_db.utils import load_metadata, save_metadata
 
 METADATA_FILE = "db_meta.json"
 
-HELP_TEXT = """***База данных***
+def print_help():
+    """Выводит справку по управлению таблицами."""
+    print("\n***Процесс работы с таблицей***")
+    print("Функции:")
+    print(
+        "<command> create_table <имя_таблицы> "
+        "<столбец1:тип> ... - создать таблицу"
+    )
+    print("<command> list_tables - показать список всех таблиц")
+    print("<command> drop_table <имя_таблицы> - удалить таблицу")
 
-Функции:
-<command> create_table <имя_таблицы> <столбец1:тип> ... - создать таблицу
-<command> list_tables - показать список всех таблиц
-<command> drop_table <имя_таблицы> - удалить таблицу
-<command> exit - выход из программы
-<command> help - справочная информация"""
+    print("\nОбщие команды:")
+    print("<command> exit - выход из программы")
+    print("<command> help - справочная информация\n")
 
 def run():
-    print(HELP_TEXT)
+    print_help()
 
     while True:
         try:
@@ -65,7 +71,7 @@ def run():
                 return
 
             if command == "help":
-                print(HELP_TEXT)
+                print_help()
             elif metadata:
                 for table_name in metadata:
                     print(f"- {table_name}")
