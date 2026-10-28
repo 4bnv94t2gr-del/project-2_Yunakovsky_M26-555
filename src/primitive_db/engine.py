@@ -4,6 +4,7 @@ import shlex
 import prompt
 from prettytable import PrettyTable
 
+from primitive_db.constants import METADATA_FILE
 from primitive_db.core import (
     create_table,
     delete,
@@ -23,7 +24,6 @@ from primitive_db.utils import (
     save_table_data,
 )
 
-METADATA_FILE = "db_meta.json"
 
 def print_help():
     """Выводит справку по доступным командам."""
@@ -253,6 +253,7 @@ def handle_data_command(user_input, metadata):
 
 
 def run():
+    """Запускает цикл чтения и обработки команд пользователя."""
     print_help()
 
     while True:

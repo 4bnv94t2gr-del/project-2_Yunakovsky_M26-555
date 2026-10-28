@@ -1,10 +1,10 @@
 import json
-from pathlib import Path
 
-DATA_DIR = Path("data")
+from primitive_db.constants import DATA_DIR
 
 
 def load_metadata(filepath):
+    """Загружает метаданные; возвращает пустой словарь без файла."""
     try:
         with open(filepath, encoding="utf-8") as file:
             return json.load(file)
@@ -13,6 +13,7 @@ def load_metadata(filepath):
 
 
 def save_metadata(filepath, data):
+    """Сохраняет метаданные в JSON-файл."""
     with open(filepath, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
         file.write("\n")
@@ -59,6 +60,8 @@ def save_table_data(table_name, data):
     with filepath.open("w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
         file.write("\n")
+
+
 
 def delete_table_data(table_name):
     """Удаляет файл данных таблицы, если он существует."""
