@@ -6,4 +6,3 @@ METADATA_FILE = "db_meta.json"
 DATA_DIR = Path("data")
 SUPPORTED_TYPES = {"int", "str", "bool"}
 CACHE_MAX_SIZE = 128
-
