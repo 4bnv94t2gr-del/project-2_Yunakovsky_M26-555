@@ -59,3 +59,11 @@ def save_table_data(table_name, data):
     with filepath.open("w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
         file.write("\n")
+
+def delete_table_data(table_name):
+    """Удаляет файл данных таблицы, если он существует."""
+    if not table_name.isidentifier():
+        raise ValueError(f"Некорректное имя таблицы: {table_name}")
+
+    filepath = DATA_DIR / f"{table_name}.json"
+    filepath.unlink(missing_ok=True)
