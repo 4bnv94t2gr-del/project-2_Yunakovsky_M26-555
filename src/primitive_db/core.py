@@ -1,20 +1,27 @@
+import json
+
+from primitive_db.decorators import (
+    confirm_action,
+    create_cacher,
+    handle_db_errors,
+    log_time,
+)
 from primitive_db.utils import load_table_data
 
 SUPPORTED_TYPES = {"int", "str", "bool"}
 
+_select_cache = create_cacher()
 
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     if table_name in metadata:
-        print(f'Ошибка: Таблица "{table_name}" уже существует.')
-        return metadata
+        raise ValueError(f'Таблица "{table_name}" уже существует.')
 
     if not table_name.isidentifier():
-        print(f"Некорректное значение: {table_name}. Попробуйте снова.")
-        return metadata
+        raise ValueError(f"Некорректное имя таблицы: {table_name}")
 
     if not columns:
-        print("Некорректное значение: не указаны столбцы. Попробуйте снова.")
-        return metadata
+        raise ValueError("Не указаны столбцы.")
 
     column_names = {"ID"}
 
@@ -22,18 +29,27 @@ def create_table(metadata, table_name, columns):
         parts = column.split(":")
 
         if len(parts) != 2:
-            print(f"Некорректное значение: {column}. Попробуйте снова.")
-            return metadata
+            raise ValueError(
+                f"Некорректное определение столбца: {column}"
+            )
 
         column_name, column_type = parts
 
-        if (
-            not column_name.isidentifier()
-            or column_name in column_names
-            or column_type not in SUPPORTED_TYPES
-        ):
-            print(f"Некорректное значение: {column}. Попробуйте снова.")
-            return metadata
+        if not column_name.isidentifier():
+            raise ValueError(
+                f"Некорректное имя столбца: {column_name}"
+            )
+
+        if column_name in column_names:
+            raise ValueError(
+                f'Столбец "{column_name}" указан повторно '
+                "или зарезервирован."
+            )
+
+        if column_type not in SUPPORTED_TYPES:
+            raise ValueError(
+                f"Неподдерживаемый тип столбца: {column_type}"
+            )
 
         column_names.add(column_name)
 
@@ -41,13 +57,15 @@ def create_table(metadata, table_name, columns):
     return metadata
 
 
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
     if table_name not in metadata:
-        print(f'Ошибка: Таблица "{table_name}" не существует.')
-        return metadata
+        raise ValueError(f'Таблица "{table_name}" не существует.')
 
     del metadata[table_name]
     return metadata
+
 
 def validate_values(metadata, table_name, values):
     """Проверяет названия столбцов и типы значений."""
@@ -80,6 +98,8 @@ def validate_values(metadata, table_name, values):
             )
 
 
+@handle_db_errors
+@log_time
 def insert(metadata, table_name, values):
     """Добавляет запись и возвращает данные без сохранения в файл."""
     if table_name not in metadata:
@@ -129,15 +149,30 @@ def matches_where(record, where_clause):
     )
 
 
+@handle_db_errors
+@log_time
 def select(table_data, where_clause=None):
-    """Возвращает копии записей, подходящих под условие."""
-    return [
-        record.copy()
-        for record in table_data
-        if where_clause is None or matches_where(record, where_clause)
-    ]
+    """Возвращает копии записей с кэшированием фильтрации."""
+    cache_key = json.dumps(
+        [table_data, where_clause],
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+    def get_records():
+        return [
+            record.copy()
+            for record in table_data
+            if where_clause is None
+            or matches_where(record, where_clause)
+        ]
+
+    cached_records = _select_cache(cache_key, get_records)
+
+    return [record.copy() for record in cached_records]
 
 
+@handle_db_errors
 def update(table_data, set_clause, where_clause):
     """Возвращает данные с обновлёнными записями."""
     if not set_clause:
@@ -157,6 +192,8 @@ def update(table_data, set_clause, where_clause):
     ]
 
 
+@handle_db_errors
+@confirm_action("удаление записей")
 def delete(table_data, where_clause):
     """Возвращает данные без записей, подходящих под условие."""
     if not where_clause:

@@ -13,6 +13,7 @@ from primitive_db.core import (
     update,
     validate_values,
 )
+from primitive_db.decorators import handle_db_errors
 from primitive_db.parser import parse_set, parse_values, parse_where
 from primitive_db.utils import (
     delete_table_data,
@@ -121,6 +122,7 @@ def show_records(metadata, table_name, records):
         print("Подходящих записей нет.")
 
 
+@handle_db_errors
 def handle_data_command(user_input, metadata):
     """Обрабатывает CRUD и info; возвращает признак обработки."""
     parts = user_input.split(maxsplit=1)
@@ -163,8 +165,11 @@ def handle_data_command(user_input, metadata):
     if command == "insert":
         values = parse_values(match.group(2))
         result = insert(metadata, table_name, values)
-        save_table_data(table_name, result)
 
+        if result is None:
+            return True
+
+        save_table_data(table_name, result)
         print(
             f'Запись с ID={result[-1]["ID"]} успешно добавлена '
             f'в таблицу "{table_name}".'
@@ -188,6 +193,10 @@ def handle_data_command(user_input, metadata):
             validate_values(metadata, table_name, where_clause)
 
         result = select(table_data, where_clause)
+
+        if result is None:
+            return True
+
         show_records(metadata, table_name, result)
         return True
 
@@ -200,19 +209,31 @@ def handle_data_command(user_input, metadata):
         validate_values(metadata, table_name, where_clause)
 
         affected = select(table_data, where_clause)
+
+        if affected is None:
+            return True
+
         result = update(table_data, set_clause, where_clause)
     else:
         where_clause = parse_where(match.group(2))
         validate_values(metadata, table_name, where_clause)
 
         affected = select(table_data, where_clause)
+
+        if affected is None:
+            return True
+
         result = delete(table_data, where_clause)
+
+    if result is None:
+        return True
 
     if not affected:
         print("Подходящих записей нет.")
         return True
 
     save_table_data(table_name, result)
+
 
     for record in affected:
         record_id = record.get("ID")
@@ -264,11 +285,7 @@ def run():
         if not user_input:
             continue
 
-        try:
-            if handle_data_command(user_input, metadata):
-                continue
-        except (OSError, ValueError) as error:
-            print(f"Ошибка: {error}")
+        if handle_data_command(user_input, metadata) is not False:
             continue
 
         try:
@@ -316,15 +333,22 @@ def run():
             table_name = arguments[0]
             previous_metadata = metadata.copy()
 
+
             if command == "create_table":
-                metadata = create_table(
+                result = create_table(
                     metadata, table_name, arguments[1:]
                 )
             else:
-                metadata = drop_table(metadata, table_name)
+                result = drop_table(metadata, table_name)
+
+            if result is None:
+                continue
+
+            metadata = result
 
             if metadata == previous_metadata:
                 continue
+
 
             try:
                 if command == "create_table":
