@@ -18,12 +18,22 @@
 
 ```bash
 uv sync
+Или через Makefile:
+
+```bash
+make install
+```
 ```
 
 ## Запуск
 
 ```bash
 uv run database
+Или через Makefile:
+
+```bash
+make run
+```
 ```
 
 Альтернативный запуск:
@@ -242,6 +252,11 @@ insert into users values ("Sergei", "wrong", true)
 
 ```bash
 uv run ruff check .
+Или через Makefile:
+
+```bash
+make lint
+```
 ```
 
 ## Сборка и проверка пакета
@@ -266,6 +281,17 @@ database
 ```
 
 ## Демонстрация
+
+
+### Полный сценарий работы
+
+Запуск через Makefile, создание таблицы, добавление и чтение записей,
+обновление данных, отмена и подтверждение удаления записи,
+удаление таблицы и завершение программы.
+
+<a href="https://asciinema.org/a/1tPBbUm1zKa5bOru"><img src="https://asciinema.org/a/1tPBbUm1zKa5bOru.svg" alt="Полный сценарий работы Primitive DB"></a>
+
+Исходная запись: `docs/final-demo.cast`.
 
 Установка пакета, запуск базы данных, создание, просмотр и удаление таблицы:
 

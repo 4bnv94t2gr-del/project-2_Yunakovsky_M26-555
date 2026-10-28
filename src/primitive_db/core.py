@@ -1,5 +1,6 @@
 import json
 
+from primitive_db.constants import SUPPORTED_TYPES
 from primitive_db.decorators import (
     confirm_action,
     create_cacher,
@@ -8,12 +9,11 @@ from primitive_db.decorators import (
 )
 from primitive_db.utils import load_table_data
 
-SUPPORTED_TYPES = {"int", "str", "bool"}
-
 _select_cache = create_cacher()
 
 @handle_db_errors
 def create_table(metadata, table_name, columns):
+    """Проверяет схему и добавляет таблицу в метаданные."""
     if table_name in metadata:
         raise ValueError(f'Таблица "{table_name}" уже существует.')
 
@@ -60,6 +60,7 @@ def create_table(metadata, table_name, columns):
 @handle_db_errors
 @confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
+    """Удаляет таблицу из метаданных после подтверждения."""
     if table_name not in metadata:
         raise ValueError(f'Таблица "{table_name}" не существует.')
 

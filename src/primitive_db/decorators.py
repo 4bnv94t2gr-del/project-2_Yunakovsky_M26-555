@@ -1,6 +1,8 @@
 import time
 from functools import wraps
 
+from primitive_db.constants import CACHE_MAX_SIZE
+
 
 def handle_db_errors(func):
     """Обрабатывает ошибки БД и возвращает None при сбое."""
@@ -71,13 +73,12 @@ def log_time(func):
 def create_cacher():
     """Создаёт кэш до 128 результатов в замыкании."""
     cache = {}
-    max_size = 128
 
     def cache_result(key, value_func):
         if key not in cache:
             value = value_func()
 
-            if len(cache) >= max_size:
+            if len(cache) >= CACHE_MAX_SIZE:
                 oldest_key = next(iter(cache))
                 del cache[oldest_key]
 
