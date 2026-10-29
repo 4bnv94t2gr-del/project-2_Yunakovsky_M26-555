@@ -1,4 +1,5 @@
 import json
+import os
 
 from primitive_db.constants import DATA_DIR
 
@@ -24,10 +25,10 @@ def load_table_data(table_name):
     if not table_name.isidentifier():
         raise ValueError(f"Некорректное имя таблицы: {table_name}")
 
-    filepath = DATA_DIR / f"{table_name}.json"
+    filepath = os.path.join(DATA_DIR, f"{table_name}.json")
 
     try:
-        with filepath.open(encoding="utf-8") as file:
+        with open(filepath, encoding="utf-8") as file:
             data = json.load(file)
     except FileNotFoundError:
         return []
@@ -54,13 +55,12 @@ def save_table_data(table_name, data):
             f'Некорректная структура данных таблицы "{table_name}".'
         )
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    filepath = DATA_DIR / f"{table_name}.json"
+    os.makedirs(DATA_DIR, exist_ok=True)
+    filepath = os.path.join(DATA_DIR, f"{table_name}.json")
 
-    with filepath.open("w", encoding="utf-8") as file:
+    with open(filepath, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
         file.write("\n")
-
 
 
 def delete_table_data(table_name):
@@ -68,5 +68,9 @@ def delete_table_data(table_name):
     if not table_name.isidentifier():
         raise ValueError(f"Некорректное имя таблицы: {table_name}")
 
-    filepath = DATA_DIR / f"{table_name}.json"
-    filepath.unlink(missing_ok=True)
+    filepath = os.path.join(DATA_DIR, f"{table_name}.json")
+
+    try:
+        os.remove(filepath)
+    except FileNotFoundError:
+        pass
