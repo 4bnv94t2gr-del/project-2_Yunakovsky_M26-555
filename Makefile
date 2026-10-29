@@ -1,13 +1,13 @@
 .PHONY: install run lint build
 
 install:
-	poetry install
+	uv sync
 
 run:
-	poetry run database
+	uv run database
 
 lint:
-	poetry run ruff check .
+	uv run ruff check .
 
 build:
-	poetry build
+	uv build

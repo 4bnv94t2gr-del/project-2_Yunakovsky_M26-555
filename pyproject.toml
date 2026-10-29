@@ -17,11 +17,13 @@ project = "primitive_db.main:main"
 database = "primitive_db.main:main"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
 
-[tool.poetry.group.dev.dependencies]
-ruff = ">=0.17.3"
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+]
 
 [tool.ruff]
 line-length = 88
@@ -31,6 +33,3 @@ exclude = ["venv", ".venv", "dist", "__pycache__"]
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = []
-
-[tool.poetry]
-packages = [{ include = "primitive_db", from = "src" }]

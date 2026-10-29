@@ -14,7 +14,7 @@
 ## Требования
 
 - Python 3.12 или новее.
-- Poetry 2.x.
+- uv.
 - make — для выполнения команд Makefile.
 
 Основные зависимости приложения:
@@ -43,7 +43,7 @@ make install
 Альтернативная команда без Makefile:
 
 ```bash
-poetry install
+uv sync
 ```
 
 
@@ -58,7 +58,7 @@ make run
 Альтернативная команда:
 
 ```bash
-poetry run database
+uv run database
 ```
 
 После запуска программа выводит справку и ожидает команды.
@@ -336,14 +336,15 @@ make lint
 Альтернативная команда:
 
 ```bash
-poetry run ruff check .
+uv run ruff check .
 ```
 
 Дополнительная проверка наличия описаний публичных функций:
 
 ```bash
-poetry run ruff check src/primitive_db --select D103
+uv run ruff check src/primitive_db --select D103
 ```
+
 
 ## Сборка
 
@@ -354,21 +355,27 @@ make build
 Альтернативная команда:
 
 ```bash
-poetry build
+uv build
 ```
 
 Исходный дистрибутив и wheel создаются в каталоге dist/.
 
+Проверка метаданных собранных дистрибутивов без публикации:
+
+```bash
+uvx twine check dist/*
+```
+
 
 ## Установка из wheel
 
-После сборки выполните:
+После сборки установите пакет как отдельный CLI-инструмент:
 
 ```bash
-uv tool install --force dist/primitive_db-0.1.0-py3-none-any.whl
+uv tool install dist/primitive_db-0.1.0-py3-none-any.whl
 ```
 
-Запуск установленной программы:
+После установки запустите приложение:
 
 ```bash
 database
@@ -412,9 +419,6 @@ database
 ## Структура проекта
 
 ```text
-Здесь существующее дерево файлов
-```
-
 src/primitive_db/
 ├── main.py          — точка входа
 ├── engine.py        — цикл приложения и обработка команд
@@ -427,4 +431,5 @@ src/primitive_db/
 docs/                — записи демонстраций
 Makefile             — команды установки, запуска, проверки и сборки
 pyproject.toml       — метаданные, зависимости и настройки инструментов
-poetry.lock          — зафиксированные версии зависимостей
+uv.lock              — зафиксированные версии зависимостей
+```
