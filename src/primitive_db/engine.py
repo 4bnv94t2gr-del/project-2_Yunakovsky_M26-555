@@ -1,4 +1,3 @@
-import re
 import shlex
 
 import prompt
@@ -81,21 +80,83 @@ def split_where(text):
             in_quotes = not in_quotes
             continue
 
-        if not in_quotes:
-            match = re.match(
-                r"\s+where\s+",
-                text[index:],
-                flags=re.IGNORECASE,
-            )
-            if match:
-                left = text[:index].strip()
-                right = text[index + match.end():].strip()
+        if in_quotes or not character.isspace():
+            continue
+
+        parts = text[index:].split(maxsplit=1)
+
+        if len(parts) == 2 and parts[0].lower() == "where":
+            left = text[:index].strip()
+            right = parts[1].strip()
+
+            if right:
                 return left, right
 
     raise ValueError(
         "Не указано условие where. "
         "Пример: where ID = 1."
     )
+
+
+def parse_data_syntax(user_input):
+    """Возвращает имя таблицы и текст параметров CRUD-команды."""
+    syntax_error = "Некорректный синтаксис команды. Введите help."
+    parts = user_input.split(maxsplit=1)
+
+    if len(parts) != 2:
+        raise ValueError(syntax_error)
+
+    command, remainder = parts
+    command = command.lower()
+
+    if command not in {"insert", "select", "update", "delete", "info"}:
+        raise ValueError(syntax_error)
+
+    if command in {"insert", "select", "delete"}:
+        parts = remainder.split(maxsplit=1)
+        expected = "into" if command == "insert" else "from"
+
+        if len(parts) != 2 or parts[0].lower() != expected:
+            raise ValueError(syntax_error)
+
+        remainder = parts[1]
+
+    parts = remainder.split(maxsplit=1)
+    table_name = parts[0]
+    parameters = parts[1].strip() if len(parts) == 2 else None
+
+    if not table_name.isidentifier():
+        raise ValueError(f"Некорректное имя таблицы: {table_name}")
+
+    if command == "info":
+        if parameters is not None:
+            raise ValueError(syntax_error)
+        return table_name, None
+
+    if command == "insert":
+        if parameters is None or parameters[:6].lower() != "values":
+            raise ValueError(syntax_error)
+
+        values_text = parameters[6:].strip()
+
+        if not (values_text.startswith("(") and values_text.endswith(")")):
+            raise ValueError(syntax_error)
+
+        return table_name, values_text
+
+    if command == "select" and parameters is None:
+        return table_name, None
+
+    if parameters is None:
+        raise ValueError(syntax_error)
+
+    parts = parameters.split(maxsplit=1)
+    expected = "set" if command == "update" else "where"
+
+    if len(parts) != 2 or parts[0].lower() != expected:
+        raise ValueError(syntax_error)
+
+    return table_name, parts[1].strip()
 
 
 def show_records(metadata, table_name, records):
@@ -135,26 +196,7 @@ def handle_data_command(user_input, metadata):
     if command not in {"insert", "select", "update", "delete", "info"}:
         return False
 
-    patterns = {
-        "insert": r"insert\s+into\s+(\w+)\s+values\s*(\(.*\))",
-        "select": r"select\s+from\s+(\w+)(?:\s+where\s+(.+))?",
-        "update": r"update\s+(\w+)\s+set\s+(.+)",
-        "delete": r"delete\s+from\s+(\w+)\s+where\s+(.+)",
-        "info": r"info\s+(\w+)",
-    }
-
-    match = re.fullmatch(
-        patterns[command],
-        user_input,
-        flags=re.IGNORECASE,
-    )
-
-    if match is None:
-        raise ValueError(
-            "Некорректный синтаксис команды. Введите help."
-        )
-
-    table_name = match.group(1)
+    table_name, command_text = parse_data_syntax(user_input)
 
     if not table_name.isidentifier():
         raise ValueError(f"Некорректное имя таблицы: {table_name}")
@@ -163,7 +205,7 @@ def handle_data_command(user_input, metadata):
         raise ValueError(f'Таблица "{table_name}" не существует.')
 
     if command == "insert":
-        values = parse_values(match.group(2))
+        values = parse_values(command_text)
         result = insert(metadata, table_name, values)
 
         if result is None:
@@ -185,7 +227,7 @@ def handle_data_command(user_input, metadata):
         return True
 
     if command == "select":
-        condition_text = match.group(2)
+        condition_text = command_text
         where_clause = None
 
         if condition_text is not None:
@@ -201,7 +243,7 @@ def handle_data_command(user_input, metadata):
         return True
 
     if command == "update":
-        set_text, where_text = split_where(match.group(2))
+        set_text, where_text = split_where(command_text)
         set_clause = parse_set(set_text)
         where_clause = parse_where(where_text)
 
@@ -215,7 +257,7 @@ def handle_data_command(user_input, metadata):
 
         result = update(table_data, set_clause, where_clause)
     else:
-        where_clause = parse_where(match.group(2))
+        where_clause = parse_where(command_text)
         validate_values(metadata, table_name, where_clause)
 
         affected = select(table_data, where_clause)

@@ -1,12 +1,26 @@
 import time
-from functools import wraps
 
 from primitive_db.constants import CACHE_MAX_SIZE
 
 
+def preserve_metadata(func):
+    """Сохраняет основные метаданные оборачиваемой функции."""
+    def decorator(wrapper):
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        wrapper.__module__ = func.__module__
+        wrapper.__qualname__ = func.__qualname__
+        wrapper.__annotations__ = func.__annotations__.copy()
+        wrapper.__dict__.update(func.__dict__)
+        wrapper.__wrapped__ = func
+        return wrapper
+
+    return decorator
+
+
 def handle_db_errors(func):
     """Обрабатывает ошибки БД и возвращает None при сбое."""
-    @wraps(func)
+    @preserve_metadata(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -30,7 +44,7 @@ def handle_db_errors(func):
 def confirm_action(action_name):
     """Создаёт декоратор подтверждения опасной операции."""
     def decorator(func):
-        @wraps(func)
+        @preserve_metadata(func)
         def wrapper(*args, **kwargs):
             try:
                 answer = input(
@@ -54,7 +68,7 @@ def confirm_action(action_name):
 
 def log_time(func):
     """Выводит время выполнения функции."""
-    @wraps(func)
+    @preserve_metadata(func)
     def wrapper(*args, **kwargs):
         started_at = time.monotonic()
 

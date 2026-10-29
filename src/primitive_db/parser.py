@@ -1,5 +1,4 @@
 import json
-import re
 
 
 def split_outside_quotes(text, separator):
@@ -60,7 +59,9 @@ def parse_value(text):
     if text.lower() == "false":
         return False
 
-    if re.fullmatch(r"[+-]?[0-9]+", text):
+    digits = text[1:] if text.startswith(("+", "-")) else text
+
+    if digits.isascii() and digits.isdecimal():
         try:
             return int(text)
         except ValueError as error:
